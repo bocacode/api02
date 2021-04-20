@@ -1,12 +1,12 @@
-var admin = require("firebase-admin")
-var serviceAccount = require("../../credentials.json")
+var admin = require('firebase-admin')
+var serviceAccount = require('../../credentials.json')
 
-let db;
+let db
 
 function reconnectToFirestore() {
-  if(!db) {
+  if (!db) {
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
+      credential: admin.credential.cert(serviceAccount),
     })
     db = admin.firestore()
   }
@@ -14,14 +14,23 @@ function reconnectToFirestore() {
 
 exports.getCars = (req, res) => {
   reconnectToFirestore()
-  res.send('Got cars')
+
+  db.collection('cars')
+    .get()
+    .then(allData => {
+      let usedCars = []
+      allData.forEach(car => usedCars.push(car.data()))
+      res.send(usedCars)
+    })
+    .catch(err => console.log(err))
 }
 
 exports.newCar = (req, res) => {
   reconnectToFirestore()
   const newData = req.body
-  db.collection('cars').add(newData)
-    .then(() => res.send('New Car Created'))
+  db.collection('cars')
+    .add(newData)
+    .then(() => this.getCars(req, res))
     .catch(err => res.status(500).send('Error creating car: ' + err.message))
 }
 
@@ -34,4 +43,3 @@ exports.deleteCar = (req, res) => {
   reconnectToFirestore()
   res.send('Car is deleted')
 }
-
